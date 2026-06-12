@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced AR Management</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy: #1A3A6B; --blue: #0F7FBF; --light-blue: #E8F4FB;
+      --gray: #F5F7FA; --text: #1C2B3A; --muted: #5A6A7A; --white: #ffffff;
+    }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: var(--text); line-height: 1.6; }
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: var(--white); border-bottom: 1px solid #e0e8f0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 60px; height: 110px;
+      box-shadow: 0 2px 12px rgba(26,58,107,0.08);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 20px; cursor: pointer; text-decoration: none; }
+    .nav-logo-hex { width: 90px; height: 90px; }
+    .nav-logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .nav-logo-text .top    { font-size: 15px; font-weight: 600; letter-spacing: 3px; color: var(--navy); text-transform: uppercase; }
+    .nav-logo-text .ar     { font-size: 38px; font-weight: 700; letter-spacing: 3px; color: var(--blue); }
+    .nav-logo-text .bottom { font-size: 14px; font-weight: 400; letter-spacing: 3px; color: var(--navy); text-transform: uppercase; }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a { text-decoration: none; font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0.5px; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--blue); }
+    .nav-cta { background: var(--blue); color: var(--white); border: none; padding: 11px 26px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--navy); }
+    .page { display: none; padding-top: 110px; }
+    .page.active { display: block; }
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #0d5a9e 55%, var(--blue) 100%);
+      min-height: calc(100vh - 110px);
+      display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+    }
+    .hero-content { padding: 80px 60px; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.12); color: #8ec8f0; font-size: 12px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 6px 16px; border-radius: 2px; margin-bottom: 28px; }
+    .hero h1 { font-size: 50px; font-weight: 700; line-height: 1.15; color: var(--white); margin-bottom: 22px; }
+    .hero h1 span { color: #8ec8f0; }
+    .hero p { font-size: 17px; color: rgba(255,255,255,0.78); margin-bottom: 40px; line-height: 1.75; }
+    .hero-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+    .hero-image { height: 100%; min-height: calc(100vh - 110px); position: relative; overflow: hidden; }
+    .hero-image img { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; filter: saturate(0.6); }
+    .hero-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, rgba(13,90,158,0.75) 0%, transparent 60%); }
+    .btn-primary { background: var(--white); color: var(--navy); padding: 14px 32px; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; letter-spacing: 0.5px; transition: all 0.2s; }
+    .btn-primary:hover { background: #e0f0fb; }
+    .btn-outline { background: transparent; color: var(--white); padding: 14px 32px; border-radius: 4px; font-size: 15px; font-weight: 600; cursor: pointer; border: 1.5px solid rgba(255,255,255,0.5); letter-spacing: 0.5px; transition: all 0.2s; }
+    .btn-outline:hover { border-color: var(--white); background: rgba(255,255,255,0.08); }
+    .sectors-strip { background: var(--white); border-bottom: 1px solid #e0e8f0; padding: 28px 60px; display: flex; align-items: center; gap: 48px; flex-wrap: wrap; }
+    .sectors-label { font-size: 12px; font-weight: 600; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+    .sector-items { display: flex; gap: 40px; flex-wrap: wrap; }
+    .sector-item { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--navy); }
+    .sector-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+    .photo-banner { display: grid; grid-template-columns: repeat(4, 1fr); height: 260px; overflow: hidden; }
+    .photo-banner-item { position: relative; overflow: hidden; }
+    .photo-banner-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .photo-banner-item:hover img { transform: scale(1.05); }
+    .photo-banner-item .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(26,58,107,0.85) 0%, transparent 50%); display: flex; align-items: flex-end; padding: 16px; }
+    .photo-banner-item .overlay span { color: var(--white); font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .section { padding: 80px 60px; }
+    .section-tag { font-size: 12px; font-weight: 600; letter-spacing: 3px; color: var(--blue); text-transform: uppercase; margin-bottom: 14px; }
+    .section h2 { font-size: 36px; font-weight: 700; color: var(--navy); margin-bottom: 16px; line-height: 1.25; }
+    .section-lead { font-size: 17px; color: var(--muted); max-width: 560px; margin-bottom: 52px; line-height: 1.7; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
+    .card { background: var(--white); border: 1px solid #dce8f2; border-radius: 8px; padding: 32px 28px; transition: box-shadow 0.2s, transform 0.2s; }
+    .card:hover { box-shadow: 0 8px 32px rgba(15,127,191,0.12); transform: translateY(-2px); }
+    .card-icon { width: 48px; height: 48px; border-radius: 8px; background: var(--light-blue); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .card-icon svg { width: 24px; height: 24px; stroke: var(--blue); fill: none; stroke-width: 1.8; }
+    .card h3 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+    .card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .split-section { display: grid; grid-template-columns: 1fr 1fr; min-height: 480px; }
+    .split-photo { position: relative; overflow: hidden; }
+    .split-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .split-photo::after { content: ''; position: absolute; inset: 0; background: rgba(26,58,107,0.15); }
+    .split-content { background: var(--navy); padding: 72px 60px; display: flex; flex-direction: column; justify-content: center; }
+    .split-content .section-tag { color: #8ec8f0; }
+    .split-content h2 { font-size: 34px; font-weight: 700; color: var(--white); margin-bottom: 18px; line-height: 1.25; }
+    .split-content p { font-size: 16px; color: rgba(255,255,255,0.75); line-height: 1.75; margin-bottom: 32px; }
+    .stats-bar { background: var(--blue); padding: 52px 60px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 32px; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 42px; font-weight: 700; color: var(--white); line-height: 1; }
+    .stat-num span { color: rgba(255,255,255,0.6); }
+    .stat-label { font-size: 13px; color: rgba(255,255,255,0.7); letter-spacing: 1px; margin-top: 6px; }
+    .services-hero { background: var(--gray); padding: 60px 60px 40px; }
+    .page-header .tag { font-size: 12px; font-weight: 600; letter-spacing: 3px; color: var(--blue); text-transform: uppercase; margin-bottom: 12px; }
+    .page-header h1 { font-size: 42px; font-weight: 700; color: var(--navy); margin-bottom: 16px; }
+    .page-header p { font-size: 17px; color: var(--muted); max-width: 580px; line-height: 1.7; }
+    .services-grid { padding: 60px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    .service-card { background: var(--white); border: 1px solid #dce8f2; border-radius: 8px; overflow: hidden; transition: box-shadow 0.2s; }
+    .service-card:hover { box-shadow: 0 8px 32px rgba(15,127,191,0.12); }
+    .service-card-header { height: 180px; position: relative; overflow: hidden; }
+    .service-card-header img { width: 100%; height: 100%; object-fit: cover; }
+    .service-card-header-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,30,60,0.92) 30%, rgba(15,30,60,0.4) 100%); padding: 20px 24px; display: flex; flex-direction: column; justify-content: flex-end; }
+    .service-sector-tag { display: inline-block; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; margin-bottom: 10px; width: fit-content; }
+    .service-card-header-overlay h2 { font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .service-card-header-overlay p { font-size: 13px; color: rgba(255,255,255,0.7); }
+    .service-card-body { padding: 24px 28px; }
+    .service-features { list-style: none; }
+    .service-features li { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; color: var(--muted); padding: 9px 0; border-bottom: 1px solid #f0f4f8; }
+    .service-features li:last-child { border-bottom: none; }
+    .check { width: 18px; height: 18px; border-radius: 50%; background: var(--light-blue); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .check::after { content: '✓'; font-size: 10px; color: var(--blue); font-weight: 700; }
+    .about-hero { background: linear-gradient(135deg, var(--navy) 0%, #0d5a9e 100%); padding: 80px 60px; }
+    .about-hero h1 { font-size: 42px; font-weight: 700; color: var(--white); margin-bottom: 16px; }
+    .about-hero p { font-size: 17px; color: rgba(255,255,255,0.75); max-width: 580px; line-height: 1.7; }
+    .about-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; padding: 80px 60px; align-items: start; }
+    .about-text h2 { font-size: 30px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+    .about-text p { font-size: 15px; color: var(--muted); line-height: 1.8; margin-bottom: 16px; }
+    .about-photo { border-radius: 8px; overflow: hidden; height: 380px; }
+    .about-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .about-values { background: var(--gray); padding: 0 60px 80px; }
+    .values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding-top: 60px; }
+    .value-card { background: var(--white); border-radius: 8px; padding: 28px 24px; border-top: 3px solid var(--blue); }
+    .value-card h3 { font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+    .value-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .contact-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 110px); }
+    .contact-left { background: var(--navy); padding: 80px 60px; display: flex; flex-direction: column; justify-content: center; }
+    .contact-left h1 { font-size: 38px; font-weight: 700; color: var(--white); margin-bottom: 20px; }
+    .contact-left p { font-size: 16px; color: rgba(255,255,255,0.72); line-height: 1.8; margin-bottom: 48px; }
+    .contact-info { display: flex; flex-direction: column; gap: 24px; }
+    .contact-info-item { display: flex; align-items: flex-start; gap: 16px; }
+    .contact-info-icon { width: 40px; height: 40px; border-radius: 6px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .contact-info-icon svg { width: 18px; height: 18px; stroke: #8ec8f0; fill: none; stroke-width: 1.8; }
+    .contact-info-text .label { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+    .contact-info-text .value { font-size: 15px; color: var(--white); font-weight: 500; }
+    .contact-right { background: var(--white); padding: 80px 60px; overflow-y: auto; }
+    .contact-right h2 { font-size: 28px; font-weight: 700; color: var(--navy); margin-bottom: 32px; }
+    .form-group { margin-bottom: 22px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 7px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #d0dcea; border-radius: 4px; font-size: 14px; color: var(--text); background: var(--white); transition: border-color 0.2s; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--blue); }
+    .form-group textarea { resize: vertical; min-height: 110px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .btn-submit { width: 100%; background: var(--blue); color: var(--white); padding: 14px; border: none; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: background 0.2s; margin-top: 8px; }
+    .btn-submit:hover { background: var(--navy); }
+    footer { background: #0f1f38; color: rgba(255,255,255,0.6); padding: 40px 60px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+    footer .footer-brand { font-size: 16px; font-weight: 700; color: var(--white); letter-spacing: 1px; }
+    footer .footer-brand span { color: #8ec8f0; }
+    footer p { font-size: 13px; }
+    footer .footer-links { display: flex; gap: 24px; }
+    footer .footer-links a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+    footer .footer-links a:hover { color: var(--white); }
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; height: 88px; }
+      .nav-logo-hex { width: 68px; height: 68px; }
+      .nav-logo-text .ar { font-size: 28px; }
+      .nav-logo-text .top, .nav-logo-text .bottom { font-size: 11px; }
+      .page { padding-top: 88px; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-image { display: none; }
+      .hero-content { padding: 60px 24px; }
+      .hero h1 { font-size: 34px; }
+      .photo-banner { grid-template-columns: 1fr 1fr; height: 320px; }
+      .section { padding: 60px 24px; }
+      .split-section { grid-template-columns: 1fr; }
+      .split-photo { height: 300px; }
+      .split-content { padding: 52px 24px; }
+      .services-grid { grid-template-columns: 1fr; padding: 40px 24px; }
+      .about-content { grid-template-columns: 1fr; padding: 40px 24px; }
+      .about-photo { height: 260px; }
+      .contact-layout { grid-template-columns: 1fr; }
+      .contact-left, .contact-right { padding: 60px 24px; }
+      .values-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      footer { padding: 32px 24px; flex-direction: column; align-items: flex-start; }
+      .sectors-strip, .services-hero, .about-hero, .about-values { padding: 24px; }
+      .stats-bar { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" onclick="showPage('home')">
+    <svg class="nav-logo-hex" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="45,4 80,24 80,66 45,86 10,66 10,24" fill="none" stroke="#1A3A6B" stroke-width="2.5"/>
+      <polygon points="45,14 70,28 70,62 45,76 20,62 20,28" fill="none" stroke="#0F7FBF" stroke-width="1.5" opacity="0.5"/>
+      <text x="45" y="52" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" fill="#1A3A6B">AR</text>
+      <circle cx="45" cy="4" r="4" fill="#0F7FBF"/>
+      <circle cx="80" cy="24" r="4" fill="#0F7FBF"/>
+      <circle cx="80" cy="66" r="4" fill="#0F7FBF"/>
+      <circle cx="45" cy="86" r="4" fill="#0F7FBF"/>
+      <circle cx="10" cy="66" r="4" fill="#0F7FBF"/>
+      <circle cx="10" cy="24" r="4" fill="#0F7FBF"/>
+    </svg>
+    <div class="nav-logo-text">
+      <span class="top">Advanced</span>
+      <span class="ar">AR</span>
+      <span class="bottom">Management</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#" onclick="showPage('home')" id="nav-home" class="active">Home</a></li>
+    <li><a href="#" onclick="showPage('services')" id="nav-services">Services</a></li>
+    <li><a href="#" onclick="showPage('about')" id="nav-about">About Us</a></li>
+    <li><a href="#" onclick="showPage('contact')" id="nav-contact">Contact</a></li>
+  </ul>
+  <button class="nav-cta" onclick="showPage('contact')">Get a Quote</button>
+</nav>
+
+<div id="page-home" class="page active">
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-tag">Accounts Receivable Management</div>
+      <h1>Get Paid Faster. <span>Reduce Risk. Grow Your Business.</span></h1>
+      <p>Advanced AR Management provides expert accounts receivable solutions for companies in products, supplies, retail, and contracting — helping you recover revenue, reduce DSO, and maintain healthy cash flow.</p>
+      <div class="hero-buttons">
+        <button class="btn-primary" onclick="showPage('services')">Our Services</button>
+        <button class="btn-outline" onclick="showPage('contact')">Talk to a Specialist</button>
+      </div>
+    </div>
+    <div class="hero-image">
+      <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&auto=format&fit=crop&q=80" alt="Financial documents">
+    </div>
+  </section>
+
+  <div class="sectors-strip">
+    <span class="sectors-label">Industries we serve</span>
+    <div class="sector-items">
+      <span class="sector-item"><span class="sector-dot"></span>Products</span>
+      <span class="sector-item"><span class="sector-dot"></span>Supplies</span>
+      <span class="sector-item"><span class="sector-dot"></span>Retail</span>
+      <span class="sector-item"><span class="sector-dot"></span>Contractors</span>
+    </div>
+  </div>
+
+  <div class="photo-banner">
+    <div class="photo-banner-item">
+      <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&auto=format&fit=crop&q=80" alt="Products">
+      <div class="overlay"><span>Products</span></div>
+    </div>
+    <div class="photo-banner-item">
+      <img src="https://images.unsplash.com/photo-1553413077-190dd305871c?w=600&auto=format&fit=crop&q=80" alt="Supplies">
+      <div class="overlay"><span>Supplies</span></div>
+    </div>
+    <div class="photo-banner-item">
+      <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format&fit=crop&q=80" alt="Retail">
+      <div class="overlay"><span>Retail</span></div>
+    </div>
+    <div class="photo-banner-item">
+      <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80" alt="Contractors">
+      <div class="overlay"><span>Contractors</span></div>
+    </div>
+  </div>
+
+  <section class="section" style="background: var(--gray)">
+    <div class="section-tag">What we do</div>
+    <h2>Complete A/R Solutions for Your Industry</h2>
+    <p class="section-lead">We manage the full accounts receivable cycle — from invoice to collection — so you can focus on running your business while we ensure your cash flow stays healthy.</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="12" y2="16"/></svg></div>
+        <h3>Invoice Management</h3>
+        <p>Accurate, timely invoicing and tracking to ensure every dollar owed is billed correctly and followed up promptly.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Collections & Recovery</h3>
+        <p>Professional, compliant collections processes that recover overdue balances while preserving your client relationships.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <h3>Cash Flow Reporting</h3>
+        <p>Real-time visibility into your receivables, aging reports, and cash flow forecasts to support smarter decisions.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+        <h3>DSO Reduction</h3>
+        <p>Proven strategies to reduce Days Sales Outstanding, accelerate cash conversion, and lower your bad debt exposure.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="split-section">
+    <div class="split-photo">
+      <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=900&auto=format&fit=crop&q=80" alt="Business finance">
+    </div>
+    <div class="split-content">
+      <div class="section-tag">Why Advanced AR Management</div>
+      <h2>Your Revenue Is Our Priority</h2>
+      <p>We combine industry expertise with a structured, technology-supported A/R process. Our team understands the unique payment dynamics of products, supplies, retail, and contracting businesses — and we tailor every engagement to your specific needs.</p>
+      <button class="btn-outline" onclick="showPage('about')">Learn About Us</button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num">$<span>M+</span></div><div class="stat-label">Revenue Recovered</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Industries Served</div></div>
+    <div class="stat"><div class="stat-num">25<span>%</span></div><div class="stat-label">Avg. DSO Reduction</div></div>
+    <div class="stat"><div class="stat-num">98<span>%</span></div><div class="stat-label">Client Satisfaction</div></div>
+  </div>
+
+  <footer>
+    <div><div class="footer-brand">Advanced <span>AR</span> Management</div><p style="margin-top:6px">© 2026 Advanced AR Management. All rights reserved.</p></div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home')">Home</a><a href="#" onclick="showPage('services')">Services</a>
+      <a href="#" onclick="showPage('about')">About</a><a href="#" onclick="showPage('contact')">Contact</a>
+    </div>
+  </footer>
+</div>
+
+<div id="page-services" class="page">
+  <div class="services-hero page-header">
+    <div class="tag">Our Services</div>
+    <h1>A/R Solutions for Every Industry</h1>
+    <p>Tailored accounts receivable management for the specific billing, collection, and cash flow challenges of your sector.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="service-card-header">
+        <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=700&auto=format&fit=crop&q=80" alt="Products">
+        <div class="service-card-header-overlay">
+          <div class="service-sector-tag">Products</div>
+          <h2>A/R for Product Companies</h2>
+          <p>Streamline billing cycles and reduce overdue balances.</p>
+        </div>
+      </div>
+      <div class="service-card-body">
+        <ul class="service-features">
+          <li><span class="check"></span>Purchase order matching and invoice validation</li>
+          <li><span class="check"></span>Dispute resolution and short-payment management</li>
+          <li><span class="check"></span>High-volume invoice processing and tracking</li>
+          <li><span class="check"></span>Distributor and wholesaler collections</li>
+          <li><span class="check"></span>Credit limit monitoring and risk assessment</li>
+        </ul>
+      </div>
+    </div>
+    <div class="service-card">
+      <div class="service-card-header">
+        <img src="https://images.unsplash.com/photo-1553413077-190dd305871c?w=700&auto=format&fit=crop&q=80" alt="Supplies">
+        <div class="service-card-header-overlay">
+          <div class="service-sector-tag">Supplies</div>
+          <h2>A/R for Supply Companies</h2>
+          <p>Manage complex net-term accounts with confidence.</p>
+        </div>
+      </div>
+      <div class="service-card-body">
+        <ul class="service-features">
+          <li><span class="check"></span>Net-30/60/90 account monitoring and follow-up</li>
+          <li><span class="check"></span>Delivery confirmation and proof-of-delivery matching</li>
+          <li><span class="check"></span>Multi-location billing consolidation</li>
+          <li><span class="check"></span>Recurring order collections management</li>
+          <li><span class="check"></span>Customer credit history reporting</li>
+        </ul>
+      </div>
+    </div>
+    <div class="service-card">
+      <div class="service-card-header">
+        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=700&auto=format&fit=crop&q=80" alt="Retail">
+        <div class="service-card-header-overlay">
+          <div class="service-sector-tag">Retail</div>
+          <h2>A/R for Retail Businesses</h2>
+          <p>Optimize B2B collections and vendor account management.</p>
+        </div>
+      </div>
+      <div class="service-card-body">
+        <ul class="service-features">
+          <li><span class="check"></span>B2B trade credit and store account collections</li>
+          <li><span class="check"></span>Chargeback and deduction management</li>
+          <li><span class="check"></span>Franchise and multi-unit account billing</li>
+          <li><span class="check"></span>Vendor compliance and deduction recovery</li>
+          <li><span class="check"></span>Seasonal cash flow planning support</li>
+        </ul>
+      </div>
+    </div>
+    <div class="service-card">
+      <div class="service-card-header">
+        <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=700&auto=format&fit=crop&q=80" alt="Contractors">
+        <div class="service-card-header-overlay">
+          <div class="service-sector-tag">Contractors</div>
+          <h2>A/R for Contractors</h2>
+          <p>Navigate progress billing, liens, and project collections.</p>
+        </div>
+      </div>
+      <div class="service-card-body">
+        <ul class="service-features">
+          <li><span class="check"></span>Progress billing and milestone invoice management</li>
+          <li><span class="check"></span>Retainage tracking and release follow-up</li>
+          <li><span class="check"></span>Lien waiver and compliance document management</li>
+          <li><span class="check"></span>GC and subcontractor payment follow-up</li>
+          <li><span class="check"></span>Change order billing and dispute resolution</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <section class="section" style="background: var(--gray); padding-top: 0">
+    <div class="section-tag">Our Process</div>
+    <h2>How We Work</h2>
+    <p class="section-lead">A structured, transparent process that turns outstanding invoices into collected revenue.</p>
+    <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+      <div class="card" style="border-top: 3px solid var(--blue)"><p style="font-size:28px;font-weight:700;color:#d0e8f5;margin-bottom:12px">01</p><h3>Assessment</h3><p>We review your A/R portfolio, aging buckets, and billing processes to identify gaps and opportunities.</p></div>
+      <div class="card" style="border-top: 3px solid var(--blue)"><p style="font-size:28px;font-weight:700;color:#d0e8f5;margin-bottom:12px">02</p><h3>Strategy</h3><p>We design a customized collections strategy and communication cadence aligned with your client relationships.</p></div>
+      <div class="card" style="border-top: 3px solid var(--blue)"><p style="font-size:28px;font-weight:700;color:#d0e8f5;margin-bottom:12px">03</p><h3>Execution</h3><p>Our team manages all outreach, follow-up, and dispute resolution on your behalf — professionally and compliantly.</p></div>
+      <div class="card" style="border-top: 3px solid var(--blue)"><p style="font-size:28px;font-weight:700;color:#d0e8f5;margin-bottom:12px">04</p><h3>Reporting</h3><p>Regular reporting on collections performance, cash flow metrics, and portfolio health with actionable insights.</p></div>
+    </div>
+  </section>
+  <footer>
+    <div><div class="footer-brand">Advanced <span>AR</span> Management</div><p style="margin-top:6px">© 2026 Advanced AR Management. All rights reserved.</p></div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home')">Home</a><a href="#" onclick="showPage('services')">Services</a>
+      <a href="#" onclick="showPage('about')">About</a><a href="#" onclick="showPage('contact')">Contact</a>
+    </div>
+  </footer>
+</div>
+
+<div id="page-about" class="page">
+  <div class="about-hero">
+    <p style="font-size:12px;font-weight:600;letter-spacing:3px;color:#8ec8f0;text-transform:uppercase;margin-bottom:12px">About Us</p>
+    <h1>Specialists in Accounts Receivable</h1>
+    <p>Advanced AR Management was founded to give businesses in product, supply, retail, and contracting a dedicated partner for managing their most critical financial asset: their receivables.</p>
+  </div>
+  <div class="about-content">
+    <div class="about-text">
+      <h2>Our Story</h2>
+      <p>We started Advanced AR Management after seeing too many good businesses struggle with cash flow — not because their sales were weak, but because collecting what they were owed was inefficient, time-consuming, and inconsistent.</p>
+      <p>Our team brings deep knowledge of the accounts receivable cycle, combined with firsthand experience in the industries we serve. We understand the payment dynamics of contractors waiting on GC draws, retailers managing chargebacks, and suppliers navigating net-term agreements.</p>
+      <p>We act as an extension of your team — protecting your revenue while maintaining the professional relationships you've built with your clients.</p>
+      <div style="margin-top:32px;display:flex;gap:20px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px;background:var(--light-blue);border-radius:8px;padding:24px 20px">
+          <p style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Mission</p>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7">Help businesses get paid — faster, more reliably, and without damaging client relationships.</p>
+        </div>
+        <div style="flex:1;min-width:180px;background:var(--navy);border-radius:8px;padding:24px 20px">
+          <p style="font-size:13px;font-weight:700;color:#8ec8f0;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase">Vision</p>
+          <p style="font-size:14px;color:rgba(255,255,255,0.72);line-height:1.7">A world where no business loses growth to preventable cash flow gaps.</p>
+        </div>
+      </div>
+    </div>
+    <div class="about-photo">
+      <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&auto=format&fit=crop&q=80" alt="Financial analysis">
+    </div>
+  </div>
+  <div class="about-values">
+    <div class="section-tag" style="padding-top:60px">Our Values</div>
+    <h2 style="font-size:30px;font-weight:700;color:var(--navy);margin-bottom:8px">What drives everything we do</h2>
+    <div class="values-grid">
+      <div class="value-card"><h3>Integrity First</h3><p>We collect professionally and ethically. Your reputation with your clients matters as much to us as recovering your revenue.</p></div>
+      <div class="value-card"><h3>Industry Expertise</h3><p>We know how products, supplies, retail, and contracting businesses operate — and tailor our A/R approach to match your industry's realities.</p></div>
+      <div class="value-card"><h3>Transparency</h3><p>No guesswork. You always know exactly where your receivables stand, what actions we've taken, and what results we've delivered.</p></div>
+    </div>
+  </div>
+  <div style="height:380px;overflow:hidden;position:relative">
+    <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1400&auto=format&fit=crop&q=80" alt="Professional team" style="width:100%;height:100%;object-fit:cover;object-position:center 40%">
+    <div style="position:absolute;inset:0;background:rgba(26,58,107,0.6);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+      <p style="font-size:13px;font-weight:600;letter-spacing:3px;color:rgba(255,255,255,0.7);text-transform:uppercase">Ready to improve your cash flow?</p>
+      <h2 style="font-size:36px;font-weight:700;color:#fff;text-align:center">Let's talk about your receivables.</h2>
+      <button class="btn-primary" onclick="showPage('contact')" style="margin-top:8px">Contact Us</button>
+    </div>
+  </div>
+  <footer>
+    <div><div class="footer-brand">Advanced <span>AR</span> Management</div><p style="margin-top:6px">© 2026 Advanced AR Management. All rights reserved.</p></div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home')">Home</a><a href="#" onclick="showPage('services')">Services</a>
+      <a href="#" onclick="showPage('about')">About</a><a href="#" onclick="showPage('contact')">Contact</a>
+    </div>
+  </footer>
+</div>
+
+<div id="page-contact" class="page">
+  <div class="contact-layout">
+    <div class="contact-left">
+      <h1>Let's Talk About Your Receivables</h1>
+      <p>Whether you're dealing with aging invoices, high DSO, or just need a better A/R process, we can help. A specialist will be in touch within one business day.</p>
+      <div class="contact-info">
+        <div class="contact-info-item">
+          <div class="contact-info-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+          <div class="contact-info-text"><div class="label">Phone</div><div class="value">+1 (555) 000-0000</div></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div class="contact-info-text"><div class="label">Email</div><div class="value">info@advancedarmgmt.com</div></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div class="contact-info-text"><div class="label">Location</div><div class="value">United States</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-right">
+      <h2>Send us a Message</h2>
+      <form onsubmit="handleSubmit(event)">
+        <div class="form-row">
+          <div class="form-group"><label>First Name</label><input type="text" placeholder="John"></div>
+          <div class="form-group"><label>Last Name</label><input type="text" placeholder="Smith"></div>
+        </div>
+        <div class="form-group"><label>Company</label><input type="text" placeholder="Your company name"></div>
+        <div class="form-group"><label>Email</label><input type="email" placeholder="john@company.com"></div>
+        <div class="form-group">
+          <label>Industry</label>
+          <select><option value="">Select your industry</option><option>Products</option><option>Supplies</option><option>Retail</option><option>Contractors</option><option>Other</option></select>
+        </div>
+        <div class="form-group">
+          <label>How can we help?</label>
+          <textarea placeholder="Tell us about your A/R challenges — aging invoices, DSO concerns, collections needs..."></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Send Message</button>
+      </form>
+    </div>
+  </div>
+  <footer>
+    <div><div class="footer-brand">Advanced <span>AR</span> Management</div><p style="margin-top:6px">© 2026 Advanced AR Management. All rights reserved.</p></div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home')">Home</a><a href="#" onclick="showPage('services')">Services</a>
+      <a href="#" onclick="showPage('about')">About</a><a href="#" onclick="showPage('contact')">Contact</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
+  }
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('.btn-submit');
+    btn.textContent = 'Message Sent!';
+    btn.style.background = '#1A3A6B';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = 'Send Message'; btn.style.background = ''; btn.disabled = false; e.target.reset(); }, 3000);
+  }
+</script>
+</body>
+</html>
