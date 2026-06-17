@@ -481,20 +481,23 @@
     </div>
     <div class="contact-right">
       <h2>Send us a Message</h2>
-      <form onsubmit="handleSubmit(event)">
+      <form onsubmit="handleSubmit(event)" id="contact-form">
+        <input type="hidden" name="access_key" value="61cb62a3-0c90-4459-b664-f60e9a041f44">
+        <input type="hidden" name="subject" value="New Contact - Advanced AR Management">
+        <input type="hidden" name="from_name" value="Advanced AR Management Website">
         <div class="form-row">
-          <div class="form-group"><label>First Name</label><input type="text" placeholder="John"></div>
-          <div class="form-group"><label>Last Name</label><input type="text" placeholder="Smith"></div>
+          <div class="form-group"><label>First Name</label><input type="text" name="first_name" placeholder="John" required></div>
+          <div class="form-group"><label>Last Name</label><input type="text" name="last_name" placeholder="Smith" required></div>
         </div>
-        <div class="form-group"><label>Company</label><input type="text" placeholder="Your company name"></div>
-        <div class="form-group"><label>Email</label><input type="email" placeholder="john@company.com"></div>
+        <div class="form-group"><label>Company</label><input type="text" name="company" placeholder="Your company name"></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="john@company.com" required></div>
         <div class="form-group">
           <label>Industry</label>
-          <select><option value="">Select your industry</option><option>Products</option><option>Supplies</option><option>Retail</option><option>Contractors</option><option>Other</option></select>
+          <select name="industry"><option value="">Select your industry</option><option>Products</option><option>Supplies</option><option>Retail</option><option>Contractors</option><option>Other</option></select>
         </div>
         <div class="form-group">
           <label>How can we help?</label>
-          <textarea placeholder="Tell us about your A/R challenges — aging invoices, DSO concerns, collections needs..."></textarea>
+          <textarea name="message" placeholder="Tell us about your A/R challenges — aging invoices, DSO concerns, collections needs..."></textarea>
         </div>
         <button type="submit" class="btn-submit">Send Message</button>
       </form>
@@ -518,13 +521,31 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return false;
   }
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const btn = e.target.querySelector('.btn-submit');
-    btn.textContent = 'Message Sent!';
-    btn.style.background = '#1A3A6B';
+    const form = e.target;
+    const btn = form.querySelector('.btn-submit');
+    btn.textContent = 'Sending...';
     btn.disabled = true;
-    setTimeout(() => { btn.textContent = 'Send Message'; btn.style.background = ''; btn.disabled = false; e.target.reset(); }, 3000);
+
+    const data = Object.fromEntries(new FormData(form));
+    const res = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const json = await res.json();
+
+    if (json.success) {
+      btn.textContent = 'Message Sent!';
+      btn.style.background = '#1A3A6B';
+      form.reset();
+      setTimeout(() => { btn.textContent = 'Send Message'; btn.style.background = ''; btn.disabled = false; }, 4000);
+    } else {
+      btn.textContent = 'Error — Try Again';
+      btn.style.background = '#c0392b';
+      btn.disabled = false;
+    }
   }
 </script>
 </body>
